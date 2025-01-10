@@ -1,9 +1,10 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+import streamlit as st
 import seaborn as sns
 import plotly.express as px
 import matplotlib.pyplot as plt
-import streamlit as st
+import plotly.graph_objects as go
 
 st.set_page_config(
     page_title="Dashboard",
@@ -13,32 +14,24 @@ st.set_page_config(
 #load dataset
 @st.cache_data
 def load_data():
-    df = pd.read_csv('Data Science Salary 2021 to 2023.csv')
+    df = pd.read_csv('dataset/Data Science Salary 2021 to 2023.csv')
     return df
 
 df_salary = load_data()
 
-st.title(':blue[Dashboard]')
+st.title('🌟 :rainbow[DataPay Insights]')
 
-r1c1, r1c2 = st.columns((4, 5), gap='small')
+r1c1, r1c2, r1c3 = st.columns((2.5, 3, 2), gap='medium')
 with r1c1:
-    st.subheader('Salary Trend over Time')
-    plt.figure(figsize = (10,6))
-    salary_trend = df_salary[['salary_in_usd', 'work_year']].sort_values(by = 'work_year')
-    chart_salary_trend = sns.lineplot(data =salary_trend ,x = 'work_year', y = 'salary_in_usd', marker = 'o',linestyle='--', color='Blue', markersize=8 )
-    plt.title('Salary Trend Over The Time', fontsize=12, fontweight='bold')
-
-    # Customize the background color
-    chart_salary_trend.set_facecolor("#f4f4f4")
-    plt.legend(['Salary'], loc='best', fontsize=12)
-
-    # Remove the grid lines
-    chart_salary_trend.grid(False)
-
-    st.pyplot(plt)
+    #Salary Trend over Time
+    st.markdown('#### 📈 Salary Trend over Time')
+    avg_salary_year = df_salary.groupby('work_year')['salary_in_usd'].mean().reset_index()
+    chart_avg_salary = px.line(avg_salary_year, x='work_year', y='salary_in_usd')
+    st.plotly_chart(chart_avg_salary)
 
 with r1c2:
-    st.subheader('Top 10 High-Paying Job Designations')
+    #Top 10 High-Paying Job Designations
+    st.markdown('#### 🏆 Top 10 High-Paying Job')
     xdf=df_salary.groupby(['job_title'])['salary_in_usd'].median().sort_values(ascending=False).head(10)
     # Create the bar chart
     chart_job_title = px.bar(
@@ -61,27 +54,16 @@ with r1c2:
     # Show the figure
     st.plotly_chart(chart_job_title)
 
-r2c1, r2c2 = st.columns((6, 4), gap='small')
+with r1c3:
+    st.markdown('#### 💰 Salary Distribution by Experience Level')
+    fig = px.box(df_salary, x='experience_level', y='salary_in_usd', color='experience_level')
+    st.plotly_chart(fig)
+
+r2c1, r2c2 = st.columns((6, 3), gap='small')
 
 with r2c1:
-    st.subheader('Top 10 Most Popular Job Desginations')
-    # Create the bar chart with enhancements
-    chart_popular_job = px.bar(
-        x=df_salary['job_title'].value_counts().head(10).index,
-        y=df_salary['job_title'].value_counts().head(10),
-        # title='Top 10 Most Popular Job Designations',
-        labels={'y': 'No. of Posts', 'x': 'Job Designations'},
-        color=df_salary['job_title'].value_counts().head(10),  # Adds color to each bar
-        color_continuous_scale='Reds'  # Choose a color scale
-    )
-
-    # Display count values on top of bars
-    chart_popular_job.update_traces(texttemplate='%{y}', textposition='outside')
-
-    st.plotly_chart(chart_popular_job)
-
-with r2c2:
-    st.subheader('Job Title Distribution')
+    #Job Title Distribution
+    st.markdown('#### 📋 Job Title Distribution')
     # Calculate frequency of each job title
     job_title_counts = df_salary['job_title'].value_counts()
 
@@ -97,5 +79,23 @@ with r2c2:
 
     #Plot
     df_salary1 = df_salary.groupby('adjusted_job_title').size().reset_index(name='Total')
-    chart_job_title = px.pie(df_salary1, values='Total', names='adjusted_job_title', color='adjusted_job_title', hole=0.5)
+    chart_job_title = px.pie(df_salary1, values='Total', names='adjusted_job_title', color='adjusted_job_title', hole=0.5, template='plotly_dark')
     st.plotly_chart(chart_job_title)
+
+with r2c2:
+    #Top 10 Most Popular Job Designations
+    st.markdown('#### 🏅 Top 10 Popular Job')
+    #Table form
+    df_pop = df_salary.groupby('job_title').size().reset_index(name='Total')
+    table_Popular = (df_pop.sort_values(by="Total", ascending=False)).head(10)
+    
+    df = st.dataframe(table_Popular,
+                column_order=("job_title", "Total"),
+                hide_index=True,
+                width=None,
+                column_config={
+                    "job_title": st.column_config.TextColumn("Job Designations",),
+                    "Total": st.column_config.ProgressColumn("No. of Posts",format="%f",min_value=0,max_value=max(df_pop.Total),)
+                    }
+                )
+    
