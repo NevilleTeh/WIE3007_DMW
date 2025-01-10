@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import json
 
 st.set_page_config(
     page_title="Dashboard",
@@ -10,10 +11,12 @@ st.set_page_config(
 #load dataset
 @st.cache_data
 def load_data():
-    df = pd.read_csv('dataset/Data Science Salary 2021 to 2023.csv')
-    return df
+    with open("Data Science Salary 2021 to 2023.json", "r") as json_file:
+        financialnews_data = json.load(json_file)
+    return financialnews_data
 
 df_salary = load_data()
+df_salary = pd.DataFrame(df_salary)
 
 st.title('🌟 :rainbow[DataPay Insights]')
 
